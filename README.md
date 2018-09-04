@@ -33,9 +33,13 @@ Todo:
 * Use Manuskripts libraries and methods, rather than recoding the parsing of the save file.  In my defense I'm not sure if the calls in loadSave.py are stable or not and I only really had to read a tiny bit of the save file.  
 * A curses (or something) progress bar like display
 * Add interval as an option
+* I believe this handles the compile option correctly, but I only saw compile values of 0 and 2, which suggests there is a 1 and I don't know how to make that happen or what the semantics of that are.  Find that out. 
+* There are some inefficiencies in walking up the tree to check the compile options.  They should probably be cleaned up.  
 
 Caveats:
 
 * Works with the v1 single .msk file, not directory structure version or previous v0 save structure.
 * It worked on my 0.7 installation/save files
 * This readme contains just enough detail so if a future perspective employer looks at it, I'm not embarrassed, but only barely.  I don't suspect anyone besides myself will have much interest in this. 
+
+Editing the README file is now procrastination from writing my novel.  The program as a whole wasn't, but editing the file with all the possible todos...
