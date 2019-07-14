@@ -16,15 +16,17 @@ usage: session_wc.py [-h] [--goal GOAL] [--start START_COUNT] PATH
 Session word count.
 
 positional arguments:
-  PATH                 Path to .msk file.
+  PATH                 Path to .msk file or root directory of the save.
 
 optional arguments:
   -h, --help           show this help message and exit
   --goal GOAL          Word count target.
   --start START_COUNT  Set the session start value.
 
-$ ./session_wc.py --goal 750 ~/Documents/test.msk 
+$ ./session_wc.py --goal 750 ~/Documents/test_file.msk 
 10/750 - Session; 133 start; 143 total 
+$ ./session_wc.py --goal 750 ~/Documents/test_dir/
+11/750 - Session; 182 start; 193 total 
 ```
 
 Todo: 
@@ -38,7 +40,7 @@ Todo:
 
 Caveats:
 
-* Works with the v1 single .msk file, not directory structure version or previous v0 save structure.
+* Works with the v1 single .msk file or directory, not previous v0 save structure.
 * It worked on my 0.7 installation/save files
 * This readme contains just enough detail so if a future perspective employer looks at it, I'm not embarrassed, but only barely.  I don't suspect anyone besides myself will have much interest in this. 
 
