@@ -296,10 +296,14 @@ def show_stats(args):
     total = fs.filesize()
     scenes = sorted(fs.get_files(scenes_only=False))
     words = 0
+    maxid = -1
     for scene in scenes:
         print((scene.path, scene.pk, scene.order_num, scene.total_order, scene.count()))
         words += scene.count()
+        if scene.pk > maxid:
+            maxid = scene.pk
     print(f'Total Bytes = {total}')
+    print(f'Max ID = {maxid}')
     print(f'Total Words = {words}')
 
 if __name__ == '__main__':
