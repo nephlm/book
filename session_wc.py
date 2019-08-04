@@ -66,8 +66,61 @@ class Folder(object):
         else:
             self.header_dict = {}
 
+    @property
+    def pk(self):
+        pk = self.header_dict.get('ID')
+        if pk:
+            try:
+                pk = int(pk)
+            except ValueError:
+                pk = None
+        return pk
+
+    @property
+    def order_num(self):
+        try:
+            base_path, filename = os.path.split(self.path)
+            if filename == 'folder.txt':
+                filename = os.path.split(base_path)[1]
+            num = filename.split('-')[0]
+            num = float(num)
+            if num == int(num):
+                num = int(num)
+            return num
+        except (IndexError, ValueError):
+            return None
+
+    @property
+    def total_order(self):
+
+        parent_path = self.get_parent_path()
+        #if 'folder.txt' in parent_path:
+
+        #print (self.path, parent_path)
+        if parent_path == self.path:
+            if self.total_order is not None:
+                return int(self.total_order)
+            else:
+                return 0
+        else:
+            if parent_path:
+                try:
+                    parent = Folder(self.zf, self.zf.getinfo(parent_path))
+                    #print(parent.base_path)
+                    parent_order = parent.total_order
+                except FileNotFoundError:
+                    parent_order = 0
+                    
+            if self.order_num is not None:
+                return (parent_order * 1000) + self.order_num
+            else:
+                return (parent_order * 1000)
+            
+                
+
     def get_parent_path(self):
         parent_base_path = os.path.split(self.base_path)[0]
+        #print(self.base_path, parent_base_path)
         return os.path.join(parent_base_path, 'folder.txt')
 
     def parent_compile(self):
@@ -83,11 +136,30 @@ class Folder(object):
 
     def is_compiled(self):
         # print(self.path)
-        if self.header_dict['compile'] == '2' and self.parent_compile():
+        if self.header_dict.get('compile') == '2' and self.parent_compile():
             return True
         # print(f'{self.path} | {self.header_dict["compile"]}')
         return False
 
+
+    def count(self, recursive=False):
+        if recursive:
+            raise NotImplementedError('recursive count isn\'t implemented yet.')
+        return 0
+
+    def __eq__(self, other):
+        return self.total_order == other.total_order
+    def __ne__(self, other):
+        return self.total_order != other.total_order
+    def __lt__(self, other):
+        return self.total_order < other.total_order
+    def __le__(self, other):
+        return self.total_order <= other.total_order
+    def __gt__(self, other):
+        return self.total_order > other.total_order
+    def __te__(self, other):
+        return self.total_order >= other.total_order
+    
 
 class Scene(Folder):
     def __init__(self, zf, zipinfo):
@@ -108,18 +180,21 @@ class Scene(Folder):
 def extract_dict_from_file(content):
         curr_key = None
         hdict = {}
-        for line in content.split('\n'):
-            # print(line)
-            # print(line[0])
-            if not line:
-                continue
-            if line[0] != ' ':
-                curr_key, val = line.split(':', 1)
-                curr_key = curr_key.strip()
-                hdict[curr_key] = val.strip()
-            else:
-                val = line.strip()
-                hdict[curr_key] = hdict[curr_key] + val.strip()
+        try:
+            for line in content.split('\n'):
+                # print(line)
+                # print(line[0])
+                if not line:
+                    continue
+                if line[0] != ' ':
+                    curr_key, val = line.split(':', 1)
+                    curr_key = curr_key.strip()
+                    hdict[curr_key] = val.strip()
+                else:
+                    val = line.strip()
+                    hdict[curr_key] = hdict[curr_key] + val.strip()
+        except ValueError:
+            pass
         return hdict
 
 
@@ -130,50 +205,73 @@ class Session(object):
         self.start = start
         self.filesize = None
         self.cache_total_count = None
-
-
-        if os.path.isdir(self.path):
-            self.zip = False
-        else:
-            self.zip = True
+        self.filestore = FileStore(self.path)
 
         if start is None:
             self.start = self.total_count()
 
     def is_changed(self):
-        if self.zip:
-            return os.path.getsize(self.path) != self.filesize
-        else:
-            return True
+        return self.filestore.filesize() != self.filesize
+
 
     def total_count(self):
         if not self.is_changed():
             return self.cache_total_count
         
-        #print(f'{self.path}')
-        if self.zip:
-            zf = zipfile.ZipFile(self.path)
-        else:
-            zf = ZipFileInterface(self.path)
-
-        folder = None
+        zf = self.filestore.zipfile_interface()
         total = 0
-        for zipinfo in zf.infolist():
-            if (zipinfo.filename.startswith('outline') and
-                    not zipinfo.filename.endswith('folder.txt')):
-                base_path = os.path.split(zipinfo.filename)[0]
-                if folder is None or folder.base_path != base_path:
-                    folder = Folder(zf, zf.getinfo(os.path.join(base_path, 'folder.txt')))
-                scene = Scene(zf, zipinfo)
-                if scene.is_compiled():
-                    total += scene.count()
-        zf.close()
+        for scene in self.filestore.get_files():
+            if scene.is_compiled:
+                total += scene.count()
         self.cache_total_count = total
         return total
 
 
     def count(self):
         return self.total_count() - self.start
+
+class FileStore(object):
+    def __init__(self, path):
+        self.path = path
+        self.is_zip = True
+        if os.path.isdir(path):
+            self.is_zip = False
+
+    def filesize(self):        
+        if self.is_zip:
+            return os.path.getsize(self.path)
+        else: 
+            total = 0
+            for root, dirs, files in os.walk(self.path):
+                if 'outline' not in root:
+                    continue 
+                for f in files:
+                    total += os.path.getsize(os.path.join(root, f))
+            return total
+
+    def zipfile_interface(self):
+        if self.is_zip:
+            return zipfile.ZipFile(self.path)
+        else:
+            return ZipFileInterface(self.path)
+
+    def get_files(self, scenes_only=True):
+        zf = self.zipfile_interface()
+        folder = None
+        files = []
+        for zipinfo in zf.infolist():
+            if (zipinfo.filename.startswith('outline') and
+                    not zipinfo.filename.endswith('folder.txt')):
+                base_path = os.path.split(zipinfo.filename)[0]
+                if folder is None or folder.base_path != base_path:
+                    folder = Folder(zf, zf.getinfo(os.path.join(base_path, 'folder.txt')))
+                    if not scenes_only:
+                        files.append(folder)
+                scene = Scene(zf, zipinfo)
+                files.append(scene)
+        # zf.close()
+        return files
+
 
 def run(session):
     cached = ''
@@ -193,6 +291,17 @@ def run_loop(args):
         time.sleep(10)
 
 
+def show_stats(args):
+    fs = FileStore(args.path)
+    total = fs.filesize()
+    scenes = sorted(fs.get_files(scenes_only=False))
+    words = 0
+    for scene in scenes:
+        print((scene.path, scene.pk, scene.order_num, scene.total_order, scene.count()))
+        words += scene.count()
+    print(f'Total Bytes = {total}')
+    print(f'Total Words = {words}')
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Session word count.')
     parser.add_argument('path', metavar='PATH', type=str,
@@ -203,6 +312,12 @@ if __name__ == '__main__':
     parser.add_argument('--start', metavar='START_COUNT', type=int,
                         default=None,
                         help='Set the session start value.')
+    parser.add_argument('--stats', action='store_true',
+                        default=False,
+                        help='Set the session start value.')
 
     args = parser.parse_args()
-    run_loop(args)
+    if args.stats:
+        show_stats(args)
+    else:
+        run_loop(args)
