@@ -57,14 +57,20 @@ class Folder(object):
         self.zipinfo = zipinfo
         self.path = zipinfo.filename
         self._parent_compile = None
+        self._parent = None
+        self._children = None
 
         self.content = zf.open(zipinfo).read().decode('utf8').strip()
-        base_path, filename = os.path.split(self.path)
-        self.base_path = base_path
-        if filename == 'folder.txt':
+        self.base_path, self.filename = os.path.split(self.path)
+        if self.filename == 'folder.txt':
             self.header_dict = extract_dict_from_file(self.content)
         else:
             self.header_dict = {}
+
+    @property
+    def is_folder(self):
+        print(self.filename)
+        return self.filename == 'folder.txt'
 
     @property
     def pk(self):
@@ -91,7 +97,21 @@ class Folder(object):
             return None
 
     @property
+    def max_order_num(self):
+        max_num = 0
+        if not self.is_folder:
+            return self.order_num
+        else:
+            for child in self.get_children():
+                order = child.order_num
+                if order > max_num:
+                    max_num = order
+            return max_num
+
+
+    @property
     def total_order(self):
+        
 
         parent_path = self.get_parent_path()
         #if 'folder.txt' in parent_path:
@@ -105,9 +125,10 @@ class Folder(object):
         else:
             if parent_path:
                 try:
-                    parent = Folder(self.zf, self.zf.getinfo(parent_path))
+                    if not self._parent:
+                        self._parent = Folder(self.zf, self.zf.getinfo(parent_path))
                     #print(parent.base_path)
-                    parent_order = parent.total_order
+                    parent_order = self._parent.total_order
                 except FileNotFoundError:
                     parent_order = 0
                     
@@ -116,7 +137,20 @@ class Folder(object):
             else:
                 return (parent_order * 1000)
             
-                
+    def get_children(self):
+        if not self.is_folder:
+            return []
+        elif self._children is not None:
+            return self._children
+        else:
+            self._children = []
+            all_items = self.zf.infolist()
+            for item in [x for x in all_items if self.base_path in x.filename]:
+                if 'folder.txt' in item.filename:
+                    self._children.append(Folder(self.zf, item))
+                else:
+                    self._children.append(Scene(self.zf, item))
+            return self._children
 
     def get_parent_path(self):
         parent_base_path = os.path.split(self.base_path)[0]
@@ -129,8 +163,9 @@ class Folder(object):
         parent_path = self.get_parent_path()
         if parent_path == 'outline/folder.txt':
             return True
-        parent = Folder(self.zf, self.zf.getinfo(parent_path))
-        self._parent_compile = parent.is_compiled()
+        if not self._parent:
+            self._parent = Folder(self.zf, self.zf.getinfo(parent_path))
+        self._parent_compile = self._parent.is_compiled()
         # print(f'PC: {parent_path}  ||  {parent.is_compiled()}')
         return self._parent_compile
 
@@ -255,7 +290,7 @@ class FileStore(object):
         else:
             return ZipFileInterface(self.path)
 
-    def get_files(self, scenes_only=True):
+    def get_files(self, include_scenes=True, include_folders=False):
         zf = self.zipfile_interface()
         folder = None
         files = []
@@ -263,12 +298,13 @@ class FileStore(object):
             if (zipinfo.filename.startswith('outline') and
                     not zipinfo.filename.endswith('folder.txt')):
                 base_path = os.path.split(zipinfo.filename)[0]
-                if folder is None or folder.base_path != base_path:
-                    folder = Folder(zf, zf.getinfo(os.path.join(base_path, 'folder.txt')))
-                    if not scenes_only:
+                if include_folders:
+                    if folder is None or folder.base_path != base_path:
+                        folder = Folder(zf, zf.getinfo(os.path.join(base_path, 'folder.txt')))
                         files.append(folder)
-                scene = Scene(zf, zipinfo)
-                files.append(scene)
+                if include_scenes:
+                    scene = Scene(zf, zipinfo)
+                    files.append(scene)
         # zf.close()
         return files
 
@@ -294,7 +330,7 @@ def run_loop(args):
 def show_stats(args):
     fs = FileStore(args.path)
     total = fs.filesize()
-    scenes = sorted(fs.get_files(scenes_only=False))
+    scenes = sorted(fs.get_files(include_folders=True))
     words = 0
     maxid = -1
     for scene in scenes:
@@ -305,6 +341,12 @@ def show_stats(args):
     print(f'Total Bytes = {total}')
     print(f'Max ID = {maxid}')
     print(f'Total Words = {words}')
+
+
+def run_test(args):
+    fs = FileStore(args.path)
+    for scene in fs.get_files(include_scenes=False, include_folders=True):
+        print(scene.filename, scene.max_order_num)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Session word count.')
@@ -318,10 +360,15 @@ if __name__ == '__main__':
                         help='Set the session start value.')
     parser.add_argument('--stats', action='store_true',
                         default=False,
-                        help='Set the session start value.')
+                        help='Show some stats.')
+    parser.add_argument('--test', action='store_true',
+                        default=False,
+                        help='Run the test function')
 
     args = parser.parse_args()
-    if args.stats:
+    if args.test:
+        run_test(args)
+    elif args.stats:
         show_stats(args)
     else:
         run_loop(args)
