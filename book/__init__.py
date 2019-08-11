@@ -3,6 +3,8 @@ import os
 import sys
 import time
 
+import prompter
+
 import book.cli as cli
 import book.session as sess
 import book.structure as struct
@@ -19,7 +21,7 @@ def arg_parser():
 
 
 def main():
-    mapping = {cli.SESSION: show_session, cli.WORK: show_work}
+    mapping = {cli.SESSION: show_session, cli.WORK: show_work, cli.RENAME: show_rename}
     args = arg_parser()
     fx = mapping.get(args.command)
     if fx is None:
@@ -39,20 +41,16 @@ def show_stats(args):
 
 
 def show_work(args):
-    def run(session):
-        cached = ""
-        if not session.is_changed:
-            cached = " (cached)"
-        print(
-            f" {session.count}/{session.goal} - Session; {session.start} start; {session.total_count} total; {cached}                ",
-            end="\r",
-        )
-
     novel = struct.Novel(args.path)
-    session = sess.Session(novel, args.goal, args.start)
-    while True:
-        run(session)
-        time.sleep(10)
+    pre_changes = novel.auto_rename(dry_run=True)
+    for change in pre_changes:
+        if change[0] != change[1]:
+            print("----" + change[0])
+            print("++++" + change[1])
+    if not args.dry_run:
+        if prompter.yesno("Rename these files?"):
+            novel.auto_rename(args.dry_run)
+            print("Files renamed.")
 
 
 def show_session(args):
@@ -70,6 +68,19 @@ def show_session(args):
     while True:
         run(session)
         time.sleep(10)
+
+
+def show_rename(args):
+    novel = struct.Novel(args.path)
+    pre_changes = novel.auto_rename(dry_run=True)
+    for change in pre_changes:
+        if change[0] != change[1]:
+            print("----" + change[0])
+            print("++++" + change[1])
+    if not args.dry_run:
+        if prompter.yesno("Rename these files?"):
+            novel.auto_rename(args.dry_run)
+            print("Files renamed.")
 
 
 if __name__ == "__main__":

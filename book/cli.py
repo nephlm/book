@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 SESSION = "session"
 STATS = "stats"
 WORK = "work"
+RENAME = "rename"
 
 
 def get_session_parser(sub_parsers):
@@ -35,14 +36,30 @@ def get_work_parser(sub_parsers):
         WORK, help="Whatever was leftover from last dev sprint"
     )
     parser.add_argument(
-        "--goal", metavar="GOAL", type=int, default=1000, help="Word count target."
+        "--dry-run",
+        "-n",
+        default=False,
+        action="store_true",
+        help="Don't actually rename anything",
     )
+    # parser.add_argument(
+    #     "target",
+    #     metavar="TARGET",
+    #     type=str,
+    #     default='scenes',
+    #     help="Renames files from metadata",
+    # )
+    return parser
+
+
+def get_rename_parser(sub_parsers):
+    parser = sub_parsers.add_parser(RENAME, help="Auto rename files based on metadata")
     parser.add_argument(
-        "--start",
-        metavar="START_COUNT",
-        type=int,
-        default=None,
-        help="Set the session start value.",
+        "--dry-run",
+        "-n",
+        default=False,
+        action="store_true",
+        help="Don't actually rename anything",
     )
     return parser
 
@@ -50,7 +67,7 @@ def get_work_parser(sub_parsers):
 def get_parser():
     # logger.info("get_parser-1")
     parser = argparse.ArgumentParser(description="Book Management.")
-    
+
     sub_parsers = parser.add_subparsers(dest="command", help="Subcommand to run")
     parser.add_argument(
         "path", metavar="PATH", type=str, help="Path to book directory."
@@ -58,6 +75,7 @@ def get_parser():
 
     get_session_parser(sub_parsers)
     get_stats_parser(sub_parsers)
+    get_rename_parser(sub_parsers)
     get_work_parser(sub_parsers)
 
     return parser

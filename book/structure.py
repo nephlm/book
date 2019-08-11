@@ -1,9 +1,8 @@
 import logging
 import os
+import string
 import sys
 import time
-
-import book.file_proc as FP
 
 logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -73,6 +72,18 @@ class Novel(object):
     def title(self):
         return self.header_dict.get("title", self.filename)
 
+    @property
+    def safe_title(self):
+        valid = string.ascii_letters + string.digits
+        safe_name = ""
+        for c in self.title:
+            if c in valid:
+                safe_name += c
+            elif c in string.whitespace:
+                safe_name += "_"
+            else:
+                safe_name += "-"
+        return safe_name
 
     @property
     def count(self):
@@ -194,7 +205,34 @@ class Novel(object):
 
     @property
     def order_digits(self):
-        return len(str(len(self._folders) + len(self._scenes)))
+        return len(str(len(self.folders()) + len(self.scenes())))
+
+    def auto_rename(self, dry_run):
+        digits = self.order_digits
+        local_ops = []
+        child_ops = []
+        for child in self.folders():
+            ops = child.auto_rename(dry_run)
+            child_ops += ops
+
+        for idx, child in enumerate(self.children):
+            old_path = child.path
+            ext = ""
+            if isinstance(child, Scene):
+                ext = ".md"
+            new_filename = f"{idx:0{digits}}-{child.safe_title}{ext}"
+            new_path = os.path.join(self.folder_path, new_filename)
+            if old_path != new_path and os.path.exists(new_path):
+                new_filename = f"{idx:0{digits}}-{child.safe_title}-{child.pk}{ext}"
+                new_path = os.path.join(self.folder_path, new_filename)
+            local_ops.append((old_path, new_path))
+
+        if not dry_run:
+            for op in local_ops:
+                if op[0] != op[1]:
+                    print(f"renaming {op[0]} --> {op[1]}")
+                    os.rename(op[0], op[1])
+        return local_ops + child_ops
 
 
 class Folder(Novel):
