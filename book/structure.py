@@ -73,6 +73,7 @@ class Novel(object):
     def title(self):
         return self.header_dict.get("title", self.filename)
 
+
     @property
     def count(self):
         count = len(self.body.split())
@@ -93,7 +94,7 @@ class Novel(object):
         return total
 
     @property
-    def changes(self):
+    def is_changed(self):
         cached_bytes = self._cached_bytes
         return cached_bytes != self.byte_count
 
