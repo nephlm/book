@@ -21,7 +21,12 @@ def arg_parser():
 
 
 def main():
-    mapping = {cli.SESSION: show_session, cli.WORK: show_work, cli.RENAME: show_rename}
+    mapping = {
+        cli.SESSION: show_session,
+        cli.WORK: show_work,
+        cli.RENAME: show_rename,
+        cli.TRANSFORM: show_transform,
+    }
     args = arg_parser()
     fx = mapping.get(args.command)
     if fx is None:
@@ -81,6 +86,16 @@ def show_rename(args):
         if prompter.yesno("Rename these files?"):
             novel.auto_rename(args.dry_run)
             print("Files renamed.")
+
+
+def show_transform(args):
+    novel = struct.Novel(args.path)
+    if args.softcrlf:
+        print("Transforming novel to soft crlf format.")
+        novel.transform_soft_crlf()
+    if args.hardcrlf:
+        print("Transforming novel to hard crlf format.")
+        novel.transform_hard_crlf()
 
 
 if __name__ == "__main__":

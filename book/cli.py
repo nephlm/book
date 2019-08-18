@@ -9,6 +9,7 @@ SESSION = "session"
 STATS = "stats"
 WORK = "work"
 RENAME = "rename"
+TRANSFORM = "transform"
 
 
 def get_session_parser(sub_parsers):
@@ -42,13 +43,25 @@ def get_work_parser(sub_parsers):
         action="store_true",
         help="Don't actually rename anything",
     )
-    # parser.add_argument(
-    #     "target",
-    #     metavar="TARGET",
-    #     type=str,
-    #     default='scenes',
-    #     help="Renames files from metadata",
-    # )
+    return parser
+
+
+def get_transform_parser(sub_parsers):
+    parser = sub_parsers.add_parser(
+        TRANSFORM, help="Perform transformations on the text."
+    )
+    parser.add_argument(
+        "--softcrlf",
+        default=False,
+        action="store_true",
+        help="Create whitespace between paragraphs for easier editing.",
+    )
+    parser.add_argument(
+        "--hardcrlf",
+        default=False,
+        action="store_true",
+        help="Remove whitespace between paragraphs.",
+    )
     return parser
 
 
@@ -77,5 +90,6 @@ def get_parser():
     get_stats_parser(sub_parsers)
     get_rename_parser(sub_parsers)
     get_work_parser(sub_parsers)
+    get_transform_parser(sub_parsers)
 
     return parser

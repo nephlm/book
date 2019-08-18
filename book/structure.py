@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import string
 import sys
 import time
@@ -36,6 +37,10 @@ class Novel(object):
 
     def __repr__(self):
         return f"{self.__class__} {self.folder_path} {self.filename}"
+
+    @property
+    def file_path(self):
+        return os.path.join(self.folder_path, self.filename)
 
     @property
     def header_dict(self):
@@ -165,20 +170,24 @@ class Novel(object):
         self._scenes.sort()
         self._dir_read_time = time.time()
 
-    def reload_file(self):
+    def reload_file(self, raise_errors=False):
         # logger.debug(f"filespec: {self.folder_path} || {self.filename}")
         try:
-            with open(os.path.join(self.folder_path, self.filename)) as fp:
+            with open(self.file_path) as fp:
                 raw_content = fp.read().strip()
                 # logger.debug(f"rc = {raw_content}")
                 try:
                     header, body = raw_content.split("\n\n", 1)
                 except ValueError:
                     header, body = raw_content, ""
+                self._raw_header = header
                 self._header_dict = self.extract_dict_from_file(header)
                 self._body = body
                 self._file_read_time = time.time()
         except FileNotFoundError:
+            if raise_errors:
+                raise
+            self._raw_header = ""
             self._header_dict = {}
             self._body = ""
 
@@ -201,6 +210,7 @@ class Novel(object):
                     hdict[curr_key] = hdict[curr_key] + val.strip()
         except ValueError:
             pass
+            raise
         return hdict
 
     @property
@@ -233,6 +243,47 @@ class Novel(object):
                     print(f"renaming {op[0]} --> {op[1]}")
                     os.rename(op[0], op[1])
         return local_ops + child_ops
+
+    def rewrite(self, header=None, body=None):
+        """
+        Will rewrite the file from the values in of self._raw_header and self._body.
+        """
+        if header is None:
+            header = self._raw_header
+        if body is None:
+            body = self._body
+        if header or body:
+            try:
+                with open(self.file_path, "w") as fp:
+                    fp.write("\n\n".join([header, body]))
+            except IOError:
+                logger.error(f"Attempt to rewrite file {self.file_path} failed!")
+                raise
+
+    def transform_hard_crlf(self):
+        self._transform_sub_regex(r"\n+", "\n")
+        for child in self.children:
+            child.transform_hard_crlf()
+
+    def transform_soft_crlf(self):
+        self._transform_sub_regex(r"\n", "\n\n")
+        for child in self.children:
+            child.transform_soft_crlf()
+
+    def _transform_sub_regex(self, pattern, replace):
+        logger.debug(f"file_path: {self.file_path}")
+        try:
+            self.reload_file(raise_errors=True)
+            body = re.sub(pattern, replace, self._body)
+            if body != self._body:
+                logger.debug("made a change")
+                self.rewrite(body=body)
+                self.reload_file
+        except FileNotFoundError:
+            # File doesn't exist
+            logger.warn(
+                f"Trying to transform file that does not exist: {self.file_path}"
+            )
 
 
 class Folder(Novel):
