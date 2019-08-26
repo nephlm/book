@@ -8,6 +8,7 @@ import prompter
 import book.cli as cli
 import book.session as sess
 import book.structure as struct
+import book.fs_utils as fs_utils
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -22,10 +23,11 @@ def arg_parser():
 
 def main():
     mapping = {
-        cli.SESSION: show_session,
-        cli.WORK: show_work,
+        cli.NEW: show_new,
         cli.RENAME: show_rename,
+        cli.SESSION: show_session,
         cli.TRANSFORM: show_transform,
+        cli.WORK: show_work,
     }
     args = arg_parser()
     fx = mapping.get(args.command)
@@ -36,7 +38,7 @@ def main():
 
 
 def show_stats(args):
-    novel = struct.Novel(args.path)
+    novel = struct.Outline(args.path)
     novel.reload_dir()
     for scene in novel.scenes(recursive=True):
         print(f"{scene.order:02d}, {scene.count:>5}, {scene.title}")
@@ -45,8 +47,49 @@ def show_stats(args):
     print(f"max pk = {novel.max_pk}")
 
 
+def show_new(args):
+    novel_path = fs_utils.find_novel_in_path(args.path)
+    print(novel_path)
+    if novel_path is None:
+        new_novel(args.path, args.convert)
+    elif os.path.exists(args.path) and not args.convert:
+        print("Novel, folder or scene already exists.")
+    else:
+        if os.path.splitext(args.path)[1] in (".md", ".txt"):
+            new_scene(novel_path, args.path, args.convert)
+        else:
+            new_folder(novel_path, args.path, args.convert)
+
+
+def new_novel(path, convert=False):
+    print(f"new novel: {path}")
+    struct.Novel.create(path, convert)
+
+
+def new_folder(novel_path, folder_path, convert):
+    if not fs_utils.has_order_digit(folder_path):
+        print(f"New folders must have an order num (12-new_folder)")
+    else:
+        print(f"new folder {folder_path} in novel {novel_path}")
+        outline = struct.Novel(novel_path).outline
+        title = fs_utils.title_from_path(folder_path)
+        ID = outline.max_pk + 1
+        struct.Folder.create(folder_path, convert, title=title, ID=ID)
+
+
+def new_scene(novel_path, scene_path, convert):
+    if not fs_utils.has_order_digit(scene_path):
+        print(f"New scenes must have an order num (12-new_scene)")
+    else:
+        print(f"new scene {scene_path} in novel {novel_path}")
+        outline = struct.Novel(novel_path).outline
+        title = fs_utils.title_from_path(scene_path)
+        ID = outline.max_pk + 1
+        struct.Scene.create(scene_path, convert, title=title, ID=ID)
+
+
 def show_work(args):
-    novel = struct.Novel(args.path)
+    novel = struct.Outline(args.path)
     pre_changes = novel.auto_rename(dry_run=True)
     for change in pre_changes:
         if change[0] != change[1]:
@@ -68,7 +111,7 @@ def show_session(args):
             end="\r",
         )
 
-    novel = struct.Novel(args.path)
+    novel = struct.Outline(args.path)
     session = sess.Session(novel, args.goal, args.start)
     while True:
         run(session)
@@ -76,7 +119,7 @@ def show_session(args):
 
 
 def show_rename(args):
-    novel = struct.Novel(args.path)
+    novel = struct.Outline(args.path)
     pre_changes = novel.auto_rename(dry_run=True)
     for change in pre_changes:
         if change[0] != change[1]:
@@ -89,7 +132,7 @@ def show_rename(args):
 
 
 def show_transform(args):
-    novel = struct.Novel(args.path)
+    novel = struct.Outline(args.path)
     if args.softcrlf:
         print("Transforming novel to soft crlf format.")
         novel.transform_soft_crlf()

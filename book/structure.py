@@ -5,11 +5,58 @@ import string
 import sys
 import time
 
+import book.metadata as mdata
+import book.fs_utils as fs_utils
+
 logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
 class Novel(object):
+
+    OUTLINE_DIR = "outline"
+    ANCHOR = "MANUSKRIPT"
+
+    def __init__(self, path):
+        self.path = path
+        self._outline = None
+
+    @property
+    def outline_path(self):
+        return os.path.join(self.path, self.OUTLINE_DIR)
+
+    @property
+    def outline(self):
+        if self._outline is None:
+            self._outline = Outline(self.outline_path)
+        return self._outline
+
+    @classmethod
+    def is_path_a_novel(cls, path):
+        if not os.path.exists(path):
+            return False
+        if not os.path.isdir(path):
+            return False
+        # print(os.listdir(path))
+        return cls.ANCHOR in os.listdir(path)
+
+    @classmethod
+    def create(cls, path, convert=False):
+        try:
+            os.makedirs(path)
+        except FileExistsError:
+            if not convert:
+                raise
+
+        title = os.path.split(path)[1]
+        with open(os.path.join(path, cls.ANCHOR), "w") as fp:
+            fp.write("1\n")
+        novel = cls(path)
+        # novel.outline.create()
+        outline = Outline.create(novel.outline_path, convert, title)
+
+
+class Outline(object):
     DEFAULT_FILENAME = "novel.md"
     CACHE_PERIOD = 10  # seconds
 
@@ -37,6 +84,49 @@ class Novel(object):
 
     def __repr__(self):
         return f"{self.__class__} {self.folder_path} {self.filename}"
+
+    @classmethod
+    def get_file_path(cls, path):
+        return os.path.join(path, cls.DEFAULT_FILENAME)
+
+    @classmethod
+    def create_folders(cls, path, convert):
+        try:
+            os.makedirs(path)
+        except FileExistsError:
+            if not convert:
+                raise
+
+    @classmethod
+    def create(cls, path, convert=False, title=None, ID=None):
+        cls.create_folders(path, convert)
+
+        metadata = mdata.DEFAULT_METADATA.copy()
+        if title is not None:
+            metadata[mdata.TITLE] = title
+        else:
+            metadata[mdata.TITLE] = fs_utils.title_from_path(path)
+
+        if ID is not None:
+            metadata[mdata.ID] = ID
+        elif cls is Outline:
+            metadata[mdata.ID] = 1
+
+        file_path = cls.get_file_path(path)
+        if convert:
+            try:
+                with open(file_path, "r") as fp:
+                    content = fp.read()
+            except FileNotFoundError:
+                content = ""
+        else:
+            content = ""
+
+        with open(file_path, "w") as fp:
+            fp.write(mdata.dict_to_metadata_string(metadata))
+            fp.write(f"\n\n{content}")
+        obj = cls(path)
+        return obj
 
     @property
     def file_path(self):
@@ -116,8 +206,14 @@ class Novel(object):
 
     @property
     def max_pk(self):
-        high = 0
+        try:
+            high = int(self.header_dict.get(mdata.ID, 0))
+        except TypeError:
+            print(f"ID in {self.path} is not an int")
+            high = 0
+        # print(f"local high: {high}")
         for child in self.children:
+            # print(f"{child.filename}: {child.max_pk}")
             high = max(high, child.max_pk)
         try:
             high = max(high, self.pk)
@@ -164,8 +260,15 @@ class Novel(object):
                     self._scenes.append(scene)
                 else:
                     self._other_files.append(file_path)
+
             else:
-                self._folders.append(Folder(file_path))
+                # directory
+                folder = Folder(file_path)
+                if folder.order is not None:
+                    self._folders.append(folder)
+                else:
+                    self._other_files.append(folder)
+
         self._folders = sorted(self._folders)
         self._scenes.sort()
         self._dir_read_time = time.time()
@@ -286,7 +389,7 @@ class Novel(object):
             )
 
 
-class Folder(Novel):
+class Folder(Outline):
     DEFAULT_FILENAME = "folder.txt"
 
     def __init__(self, path, filename="folder.txt"):
@@ -321,7 +424,7 @@ class Folder(Novel):
     def __gt__(self, other):
         return self.order > other.order
 
-    def __te__(self, other):
+    def __ge__(self, other):
         return self.order >= other.order
 
 
@@ -356,4 +459,20 @@ class Scene(Folder):
 
     def other_files(self):
         return []
+
+    @classmethod
+    def get_file_path(cls, path):
+        return path
+
+    @classmethod
+    def create_folders(cls, path, convert):
+        parent_dir = os.path.split(path)[0]
+        if not os.path.exists(parent_dir):
+            raise FileNotFoundError(
+                f"{parent_dir} does not exist.  Is the path correct?"
+            )
+        if os.path.exists(path) and not convert:
+            raise FileExistsError(
+                f"{path} already exists, did you want to --convert it?"
+            )
 

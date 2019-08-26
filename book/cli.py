@@ -5,11 +5,12 @@ import sys
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+NEW = "new"
+RENAME = "rename"
 SESSION = "session"
 STATS = "stats"
-WORK = "work"
-RENAME = "rename"
 TRANSFORM = "transform"
+WORK = "work"
 
 
 def get_session_parser(sub_parsers):
@@ -77,6 +78,18 @@ def get_rename_parser(sub_parsers):
     return parser
 
 
+def get_new_parser(sub_parsers):
+    parser = sub_parsers.add_parser(NEW, help="Create a new novel, folder or scene.")
+    parser.add_argument(
+        "--convert",
+        "-c",
+        default=False,
+        action="store_true",
+        help="convert an existing directory or file.",
+    )
+    return parser
+
+
 def get_parser():
     # logger.info("get_parser-1")
     parser = argparse.ArgumentParser(description="Book Management.")
@@ -86,10 +99,11 @@ def get_parser():
         "path", metavar="PATH", type=str, help="Path to book directory."
     )
 
+    get_new_parser(sub_parsers)
+    get_rename_parser(sub_parsers)
     get_session_parser(sub_parsers)
     get_stats_parser(sub_parsers)
-    get_rename_parser(sub_parsers)
-    get_work_parser(sub_parsers)
     get_transform_parser(sub_parsers)
+    get_work_parser(sub_parsers)
 
     return parser
