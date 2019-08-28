@@ -1,3 +1,7 @@
+"""
+Utilities to deal with the meta data for a scene/folder.
+"""
+
 TITLE = "title"
 ID = "ID"
 TYPE = "type"
@@ -7,6 +11,10 @@ DEFAULT_METADATA = {TITLE: "title", ID: 0, TYPE: "md", COMPILE: 2}
 
 
 def format_meta_data(name, value, tab_length=10):
+    """
+    Formats a single meta data item.
+    Taken directly from manuskript originally.
+    """
     # Multiline formatting
     if len(value.split("\n")) > 1:
         lines = value.split("\n")
@@ -25,6 +33,9 @@ def format_meta_data(name, value, tab_length=10):
 
 
 def dict_to_metadata_string(dict, tab_length=15):
+    """
+    converts a dict to .mmd metadata string format.
+    """
     st = ""
     for key, val in dict.items():
         if val is not None and val != "":

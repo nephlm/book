@@ -1,3 +1,13 @@
+"""
+The lion's share of the project.
+
+Manages the novel structure and the outline hierarchy.  Many of these functions are recursive walking 
+through folders and files.
+
+This hierarchy is based on the manuskript .msk format (but not set to save as a single file), but there are
+some differences.  The README.md should have relevant information. 
+"""
+
 import logging
 import os
 import re
@@ -13,6 +23,9 @@ logger = logging.getLogger(__name__)
 
 
 class Novel(object):
+    """
+    Top level novel structure.  This is the path that is passed into most of the commands.
+    """
 
     OUTLINE_DIR = "outline"
     ANCHOR = "MANUSKRIPT"
@@ -53,10 +66,19 @@ class Novel(object):
             fp.write("1\n")
         novel = cls(path)
         # novel.outline.create()
-        outline = Outline.create(novel.outline_path, convert, title)
+        Outline.create(novel.outline_path, convert, title)
+        return novel
 
 
 class Outline(object):
+    """
+    The outline directory.  It contains folders and scenes. The underlying folders can further contain
+    folders and scenes. 
+
+    Folder and scenes inherit from this class and many of the methods are self aware and operate properly 
+    in any of those cases. 
+    """
+
     DEFAULT_FILENAME = "novel.md"
     CACHE_PERIOD = 10  # seconds
 
@@ -91,6 +113,9 @@ class Outline(object):
 
     @classmethod
     def create_folders(cls, path, convert):
+        """
+        Create all the required directories for a Folder path to exist. 
+        """
         try:
             os.makedirs(path)
         except FileExistsError:
@@ -201,6 +226,9 @@ class Outline(object):
 
     @property
     def is_changed(self):
+        """
+        not idempotent
+        """
         cached_bytes = self._cached_bytes
         return cached_bytes != self.byte_count
 
@@ -390,6 +418,10 @@ class Outline(object):
 
 
 class Folder(Outline):
+    """
+    A folder underneat the outline path or a parent folder. 
+    """
+
     DEFAULT_FILENAME = "folder.txt"
 
     def __init__(self, path, filename="folder.txt"):
@@ -429,6 +461,11 @@ class Folder(Outline):
 
 
 class Scene(Folder):
+    """
+    a scene .md file under a folder. It maintains the interface of Folder so the walking the hierarchy 
+    down to files doesn't cause any issues.
+    """
+
     DEFAULT_FILENAME = None
 
     def __init__(self, path):
@@ -466,6 +503,9 @@ class Scene(Folder):
 
     @classmethod
     def create_folders(cls, path, convert):
+        """
+        Overrides parent's `create_folders` since self.path is a file and not a folder. 
+        """
         parent_dir = os.path.split(path)[0]
         if not os.path.exists(parent_dir):
             raise FileNotFoundError(

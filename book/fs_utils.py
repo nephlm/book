@@ -1,3 +1,9 @@
+"""
+File system utilities.  Differnetiated from structure as these functions are usually called before 
+the novel object has been created.  Often used to decide what sort of structure object to be created
+or to gather data needed to instantiate those object.
+"""
+
 import os.path
 
 import book.structure as struct
@@ -35,6 +41,9 @@ def has_order_digit(path):
 
 
 def title_from_path(path):
+    """
+    Extract the title from the path, peels off the order number.
+    """
     filename = os.path.split(path)[1]
     try:
         return filename.split("-")[1]

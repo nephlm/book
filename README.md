@@ -22,8 +22,6 @@ The resulting structure is only close to the manuscript format, no attempt will 
 
 I generally use (tiddlywiki)[https://tiddlywiki.com] for my world bible and the rest of these files are two structured for my needs. 
 
-The only think I'll truly miss is revisions.  I use git and a private repo for those.  Eventually I'll add a fs monitor and automatic commits, but not there yet. 
-
 ## Subcommands 
 
 The main command is `book` and like with git there is a required subcommand.  Path is a required argument to all subcommands.  With the exception of some permutations of `new` this is alwasy the folder containing the `MANUSKRIPT` file.
@@ -89,6 +87,10 @@ optional arguments:
 $ book session --goal 750 ~/Documents/my_novel
 11/750 - Session; 182 start; 193 total 
 ```
+
+While session is running the novel will be committed and pushed to a git remote repo every 10 minutes.  It will likely throw errors if your novel is not backed by a git repo or git is not installed.  
+
+Github now has private repos so there is no excuse. 
 
 ### Stats
 

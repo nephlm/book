@@ -1,3 +1,7 @@
+"""
+Main file of the package.  Kicks off the subcommands.
+"""
+
 import logging
 import os
 import sys
@@ -38,13 +42,13 @@ def main():
 
 
 def show_stats(args):
-    novel = struct.Outline(args.path)
-    novel.reload_dir()
-    for scene in novel.scenes(recursive=True):
+    outline = struct.Outline(args.path)
+    outline.reload_dir()
+    for scene in outline.scenes(recursive=True):
         print(f"{scene.order:02d}, {scene.count:>5}, {scene.title}")
 
-    print(f"count = {novel.count}")
-    print(f"max pk = {novel.max_pk}")
+    print(f"count = {outline.count}")
+    print(f"max pk = {outline.max_pk}")
 
 
 def show_new(args):
@@ -89,15 +93,15 @@ def new_scene(novel_path, scene_path, convert):
 
 
 def show_work(args):
-    novel = struct.Outline(args.path)
-    pre_changes = novel.auto_rename(dry_run=True)
+    outline = struct.Outline(args.path)
+    pre_changes = outline.auto_rename(dry_run=True)
     for change in pre_changes:
         if change[0] != change[1]:
             print("----" + change[0])
             print("++++" + change[1])
     if not args.dry_run:
         if prompter.yesno("Rename these files?"):
-            novel.auto_rename(args.dry_run)
+            outline.auto_rename(args.dry_run)
             print("Files renamed.")
 
 
@@ -111,34 +115,35 @@ def show_session(args):
             end="\r",
         )
 
-    novel = struct.Outline(args.path)
+    novel = struct.Novel(args.path)
     session = sess.Session(novel, args.goal, args.start)
     while True:
         run(session)
+        session.commit()
         time.sleep(10)
 
 
 def show_rename(args):
-    novel = struct.Outline(args.path)
-    pre_changes = novel.auto_rename(dry_run=True)
+    outline = struct.Outline(args.path)
+    pre_changes = outline.auto_rename(dry_run=True)
     for change in pre_changes:
         if change[0] != change[1]:
             print("----" + change[0])
             print("++++" + change[1])
     if not args.dry_run:
         if prompter.yesno("Rename these files?"):
-            novel.auto_rename(args.dry_run)
+            outline.auto_rename(args.dry_run)
             print("Files renamed.")
 
 
 def show_transform(args):
-    novel = struct.Outline(args.path)
+    outline = struct.Outline(args.path)
     if args.softcrlf:
         print("Transforming novel to soft crlf format.")
-        novel.transform_soft_crlf()
+        outline.transform_soft_crlf()
     if args.hardcrlf:
         print("Transforming novel to hard crlf format.")
-        novel.transform_hard_crlf()
+        outline.transform_hard_crlf()
 
 
 if __name__ == "__main__":

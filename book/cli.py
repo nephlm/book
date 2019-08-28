@@ -1,3 +1,7 @@
+"""
+argparse definitions.
+"""
+
 import argparse
 import logging
 import sys
