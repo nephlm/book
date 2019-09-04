@@ -32,6 +32,7 @@ def main():
         cli.SESSION: show_session,
         cli.TRANSFORM: show_transform,
         cli.WORK: show_work,
+        cli.COMPILE: show_compile,
     }
     args = arg_parser()
     fx = mapping.get(args.command)
@@ -144,6 +145,23 @@ def show_transform(args):
     if args.hardcrlf:
         print("Transforming novel to hard crlf format.")
         outline.transform_hard_crlf()
+
+
+def show_compile(args):
+    if args.build_dir is None:
+        build_dir = os.path.join(args.path, 'build')
+    else:
+        build_dir = args.buid_dir
+
+    if not os.path.exists(build_dir):
+        os.makedirs(build_dir)
+
+    novel = struct.Novel(args.path)
+    single_string = novel.compile()
+
+    filename = os.path.join(build_dir, 'single_file.md')
+    with open(filename, 'w') as fp:
+        fp.write(single_string)
 
 
 if __name__ == "__main__":

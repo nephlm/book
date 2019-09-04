@@ -6,6 +6,7 @@ or to gather data needed to instantiate those object.
 
 import os.path
 
+
 import book.structure as struct
 
 
@@ -19,12 +20,21 @@ def find_novel_in_path(path):
     while curr_path and curr_path != "/":
         # print(curr_path)
         try:
-            if struct.Novel.is_path_a_novel(curr_path):
+            if is_path_a_novel(curr_path):
                 return curr_path
         except FileNotFoundError:
             pass
         curr_path, _ = os.path.split(curr_path)
     return None
+
+
+def is_path_a_novel(path):
+    if not os.path.exists(path):
+        return False
+    if not os.path.isdir(path):
+        return False
+    # print(os.listdir(path))
+    return struct.Novel.ANCHOR in os.listdir(path)
 
 
 def has_order_digit(path):
@@ -46,6 +56,6 @@ def title_from_path(path):
     """
     filename = os.path.split(path)[1]
     try:
-        return filename.split("-")[1]
+        return os.path.splitext(filename.split("-")[1])[0]
     except IndexError:
         return None

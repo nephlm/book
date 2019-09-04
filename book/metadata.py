@@ -6,6 +6,14 @@ TITLE = "title"
 ID = "ID"
 TYPE = "type"
 COMPILE = "compile"
+LEVEL = "level"
+STRUCTURE = "structure"  # 'novel', 'chapter', 'scene' (defaults to scene)
+
+NOVEL = "novel"
+CHAPTER = "chapter"
+SCENE = "scene"
+ALLOWABLE_STRUCTURES = (NOVEL, CHAPTER, SCENE)
+DEFAULT_STRUCTURE = SCENE
 
 DEFAULT_METADATA = {TITLE: "title", ID: 0, TYPE: "md", COMPILE: 2}
 

@@ -15,6 +15,8 @@ import string
 import sys
 import time
 
+from typing import Optional
+
 import book.metadata as mdata
 import book.fs_utils as fs_utils
 
@@ -68,6 +70,24 @@ class Novel(object):
         # novel.outline.create()
         Outline.create(novel.outline_path, convert, title)
         return novel
+
+    def compile(self) -> str:
+        single_string = self.compile_frontmatter()
+        single_string += self.outline.compile_string()
+        single_string += self.compile_backmatter()
+        single_string = self.clean_compile(single_string)
+        return single_string
+
+    def compile_frontmatter(self) -> str:
+        return f"# {self.outline.title}\n\n"
+
+    def compile_backmatter(self) -> str:
+        return ""
+
+    def clean_compile(self, single_string):
+        while '\n\n\n' in single_string:
+            single_string = single_string.replace('\n\n\n', '\n\n')
+        return single_string
 
 
 class Outline(object):
@@ -152,6 +172,20 @@ class Outline(object):
             fp.write(f"\n\n{content}")
         obj = cls(path)
         return obj
+
+    @property
+    def structure_metadata(self) -> str:
+        """
+        The semantic position of this object in the novel (novel, chapter, scene)
+
+        It is possible for subclasses to return None and use the default. 
+        """
+        return mdata.NOVEL
+
+    @property
+    def is_chapter(self) -> bool:
+        semantic = self.header_dict.get(mdata.STRUCTURE, mdata.SCENE)
+        return semantic == mdata.CHAPTER
 
     @property
     def file_path(self):
@@ -248,6 +282,30 @@ class Outline(object):
         except AttributeError:
             pass
         return high
+
+    @property
+    def level(self) -> int:
+        """
+        Return the number of levels deep this structure is from outline
+        .../outline/Novel.md -> 0
+        .../outline/1-folder/folder.txt -> 1
+        .../outline/1-folder/scene.md -> 2
+        """
+        if mdata.LEVEL in self.header_dict:
+            try:
+                return int(self.header_dict[mdata.LEVEL])
+            except ValueError:
+                pass
+
+        novel_path = fs_utils.find_novel_in_path(self.path)
+        remainder = self.path.replace(novel_path, "")
+        level = 0
+        while "outline" in remainder:
+            # print(remainder)
+            remainder, _ = os.path.split(remainder)
+            level += 1
+
+        return level - 1
 
     def folders(self):
         if self._folders is None or self.dir_cache_expired:
@@ -377,16 +435,16 @@ class Outline(object):
 
     def rewrite(self, header=None, body=None):
         """
-        Will rewrite the file from the values in of self._raw_header and self._body.
+        Will rewrite the file from the values in of self.header and self._body.
         """
         if header is None:
-            header = self._raw_header
+            header = self.header_dict
         if body is None:
             body = self._body
         if header or body:
             try:
                 with open(self.file_path, "w") as fp:
-                    fp.write("\n\n".join([header, body]))
+                    fp.write("\n\n".join([mdata.dict_to_metadata_string(header), body]))
             except IOError:
                 logger.error(f"Attempt to rewrite file {self.file_path} failed!")
                 raise
@@ -416,16 +474,48 @@ class Outline(object):
                 f"Trying to transform file that does not exist: {self.file_path}"
             )
 
+    def compile_string(self) -> str:
+        single_string = self.compile_frontmatter()
+        single_string += self.body
+        for child in self.children:
+            single_string += child.compile_string()
+        single_string += self.compile_backmatter()
+        return single_string
+
+    def compile_frontmatter(self) -> str:
+        frontmatter = ""
+        if self.is_chapter:
+            frontmatter += f"\n\n## {self.title}\n\n"
+        return frontmatter
+
+    def compile_backmatter(self) -> str:
+        return ""
+
 
 class Folder(Outline):
     """
-    A folder underneat the outline path or a parent folder. 
+    A folder underneath the outline path or a parent folder. 
     """
 
     DEFAULT_FILENAME = "folder.txt"
 
     def __init__(self, path, filename="folder.txt"):
         super().__init__(path)
+
+    @property
+    def structure_metadata(self) -> str:
+        """
+        The semantic position of this object in the novel (novel, chapter, scene)
+        
+        It is possible for subclasses to return None and use the default. 
+
+        Although in many cases a folder should be considered a chapter, not all folders are chapters.
+        The default will be to create the folder as chapter.
+
+        This should return 'chapter' if that turns out to be the wrong choice change this to None so the 
+        default of scene is used. 
+        """
+        return mdata.CHAPTER
 
     @property
     def order(self):
@@ -516,3 +606,11 @@ class Scene(Folder):
                 f"{path} already exists, did you want to --convert it?"
             )
 
+    @property
+    def structure_metadata(self) -> Optional[str]:
+        """
+        The semantic position of this object in the novel (novel, chapter, scene)
+        
+        Returning None will use the implied default of scene. 
+        """
+        return None

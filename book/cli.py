@@ -9,6 +9,7 @@ import sys
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+COMPILE = "compile"
 NEW = "new"
 RENAME = "rename"
 SESSION = "session"
@@ -94,6 +95,14 @@ def get_new_parser(sub_parsers):
     return parser
 
 
+def get_compile_parser(sub_parsers):
+    parser = sub_parsers.add_parser(COMPILE, help="Compile the novel ")
+    parser.add_argument(
+        '--build-dir', '-b', default=None, help='directory to use to build the novel.'
+    )
+    return parser
+
+
 def get_parser():
     # logger.info("get_parser-1")
     parser = argparse.ArgumentParser(description="Book Management.")
@@ -109,5 +118,6 @@ def get_parser():
     get_stats_parser(sub_parsers)
     get_transform_parser(sub_parsers)
     get_work_parser(sub_parsers)
+    get_compile_parser(sub_parsers)
 
     return parser
