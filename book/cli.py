@@ -35,6 +35,13 @@ def get_session_parser(sub_parsers):
 
 def get_stats_parser(sub_parsers):
     parser = sub_parsers.add_parser(STATS, help="Scene stats sheet")
+    parser.add_argument(
+        "--folder",
+        "-f",
+        default=False,
+        action="store_true",
+        help="Show stats for folders instead of scenes.",
+    )
     return parser
 
 

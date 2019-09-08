@@ -13,6 +13,7 @@ import book.cli as cli
 import book.session as sess
 import book.structure as struct
 import book.fs_utils as fs_utils
+import book.compile as compile
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -45,8 +46,13 @@ def main():
 def show_stats(args):
     outline = struct.Outline(args.path)
     outline.reload_dir()
-    for scene in outline.scenes(recursive=True):
-        print(f"{scene.order:02d}, {scene.count:>5}, {scene.title}")
+    if args.folder:
+        for scene in outline.folders(recursive=True):
+            print(f"{scene.order:02d}, {scene.count:>5}, {scene.title}")
+
+    else:
+        for scene in outline.scenes(recursive=True):
+            print(f"{scene.order:02d}, {scene.count:>5}, {scene.title}")
 
     print(f"count = {outline.count}")
     print(f"max pk = {outline.max_pk}")
@@ -159,9 +165,14 @@ def show_compile(args):
     novel = struct.Novel(args.path)
     single_string = novel.compile()
 
-    filename = os.path.join(build_dir, 'single_file.md')
-    with open(filename, 'w') as fp:
+    # write master md file
+    md_filename = os.path.join(build_dir, 'single_file.md')
+    with open(md_filename, 'w') as fp:
         fp.write(single_string)
+
+    # convert md file to epub
+    epub_filename = os.path.join(build_dir, 'book.epub')
+    compile.compile_to_epub(md_filename, epub_filename)
 
 
 if __name__ == "__main__":

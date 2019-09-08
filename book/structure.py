@@ -79,7 +79,8 @@ class Novel(object):
         return single_string
 
     def compile_frontmatter(self) -> str:
-        return f"# {self.outline.title}\n\n"
+        # return f"# {self.outline.title}\n\n"
+        return ''
 
     def compile_backmatter(self) -> str:
         return ""
@@ -307,10 +308,17 @@ class Outline(object):
 
         return level - 1
 
-    def folders(self):
+    def folders(self, recursive=False):
         if self._folders is None or self.dir_cache_expired:
             self.reload_dir()
-        return self._folders
+        if recursive:
+            ret_list = []
+            for folder in self._folders:
+                ret_list.append(folder)
+                ret_list += folder.folders(recursive=True)
+            return ret_list
+        else:
+            return self._folders
 
     def scenes(self, recursive=False):
         if self._scenes is None or self.dir_cache_expired:
@@ -485,7 +493,7 @@ class Outline(object):
     def compile_frontmatter(self) -> str:
         frontmatter = ""
         if self.is_chapter:
-            frontmatter += f"\n\n## {self.title}\n\n"
+            frontmatter += f"\n\n# {self.title}\n\n"
         return frontmatter
 
     def compile_backmatter(self) -> str:
