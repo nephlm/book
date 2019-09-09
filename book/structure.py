@@ -403,8 +403,8 @@ class Outline(object):
                     curr_key = curr_key.strip()
                     hdict[curr_key] = val.strip()
                 else:
-                    val = line.strip()
-                    hdict[curr_key] = hdict[curr_key] + val.strip()
+                    # val = line.strip()
+                    hdict[curr_key] = hdict[curr_key] + '\n' + line.strip()
         except ValueError:
             pass
             raise

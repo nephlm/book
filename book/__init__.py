@@ -144,7 +144,8 @@ def show_rename(args):
 
 
 def show_transform(args):
-    outline = struct.Outline(args.path)
+    novel = struct.Novel(args.path)
+    outline = novel.outline
     if args.softcrlf:
         print("Transforming novel to soft crlf format.")
         outline.transform_soft_crlf()
@@ -157,7 +158,7 @@ def show_compile(args):
     if args.build_dir is None:
         build_dir = os.path.join(args.path, 'build')
     else:
-        build_dir = args.buid_dir
+        build_dir = args.build_dir
 
     if not os.path.exists(build_dir):
         os.makedirs(build_dir)
