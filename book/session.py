@@ -51,6 +51,10 @@ class Session(object):
         # print(
         #     f"{time.time() - self.last_commit} || {time.time() - self.last_change} || {git_utils.is_dirty(self.novel.path)}"
         # )
+        if not git_utils.is_repo(self.novel.path):
+            # No git repo, skip
+            return
+
         commit_delta = time.time() - self.last_commit
         change_delta = time.time() - self.last_change
         if (
