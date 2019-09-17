@@ -8,8 +8,9 @@ from dateutil import tz
 import logging
 
 import git
+
 Repo = git.Repo
-#from git import Repo
+# from git import Repo
 
 git_logger = logging.getLogger("git.cmd")
 git_logger.setLevel(logging.INFO)
@@ -18,6 +19,7 @@ git_logger.setLevel(logging.INFO)
 def is_repo(path):
     return get_repo(path, silent=True)
 
+
 def get_repo(path, silent=False):
     try:
         return Repo(path)
@@ -25,6 +27,7 @@ def get_repo(path, silent=False):
         if not silent:
             print('No git repo found -- SKIPPING COMMIT')
         return None
+
 
 def is_dirty(path):
     """
@@ -41,11 +44,12 @@ def is_dirty(path):
     else:
         return False
 
+
 def commit(path):
     """
     Add and commit untracked files and changed files.  Message is the date/time in iso format.
     """
-    repo = get_repo
+    repo = get_repo(path)
     if repo:
         for item in repo.untracked_files:
             repo.git.add(item)
