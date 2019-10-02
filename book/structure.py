@@ -1,11 +1,11 @@
 """
 The lion's share of the project.
 
-Manages the novel structure and the outline hierarchy.  Many of these functions are recursive walking 
+Manages the novel structure and the outline hierarchy.  Many of these functions are recursive walking
 through folders and files.
 
 This hierarchy is based on the manuskript .msk format (but not set to save as a single file), but there are
-some differences.  The README.md should have relevant information. 
+some differences.  The README.md should have relevant information.
 """
 
 import logging
@@ -30,6 +30,7 @@ class Novel(object):
     """
 
     OUTLINE_DIR = "outline"
+    WORLD_BUILDING_DIR = "world"
     ANCHOR = "MANUSKRIPT"
 
     def __init__(self, path):
@@ -39,6 +40,10 @@ class Novel(object):
     @property
     def outline_path(self):
         return os.path.join(self.path, self.OUTLINE_DIR)
+
+    @property
+    def world_building_path(self):
+        return os.path.join(self.path, self.WORLD_BUILDING_DIR)
 
     @property
     def outline(self):
@@ -80,24 +85,24 @@ class Novel(object):
 
     def compile_frontmatter(self) -> str:
         # return f"# {self.outline.title}\n\n"
-        return ''
+        return ""
 
     def compile_backmatter(self) -> str:
         return ""
 
     def clean_compile(self, single_string):
-        while '\n\n\n' in single_string:
-            single_string = single_string.replace('\n\n\n', '\n\n')
+        while "\n\n\n" in single_string:
+            single_string = single_string.replace("\n\n\n", "\n\n")
         return single_string
 
 
 class Outline(object):
     """
     The outline directory.  It contains folders and scenes. The underlying folders can further contain
-    folders and scenes. 
+    folders and scenes.
 
-    Folder and scenes inherit from this class and many of the methods are self aware and operate properly 
-    in any of those cases. 
+    Folder and scenes inherit from this class and many of the methods are self aware and operate properly
+    in any of those cases.
     """
 
     DEFAULT_FILENAME = "novel.md"
@@ -135,7 +140,7 @@ class Outline(object):
     @classmethod
     def create_folders(cls, path, convert):
         """
-        Create all the required directories for a Folder path to exist. 
+        Create all the required directories for a Folder path to exist.
         """
         try:
             os.makedirs(path)
@@ -179,7 +184,7 @@ class Outline(object):
         """
         The semantic position of this object in the novel (novel, chapter, scene)
 
-        It is possible for subclasses to return None and use the default. 
+        It is possible for subclasses to return None and use the default.
         """
         return mdata.NOVEL
 
@@ -404,7 +409,7 @@ class Outline(object):
                     hdict[curr_key] = val.strip()
                 else:
                     # val = line.strip()
-                    hdict[curr_key] = hdict[curr_key] + '\n' + line.strip()
+                    hdict[curr_key] = hdict[curr_key] + "\n" + line.strip()
         except ValueError:
             pass
             raise
@@ -502,7 +507,7 @@ class Outline(object):
 
 class Folder(Outline):
     """
-    A folder underneath the outline path or a parent folder. 
+    A folder underneath the outline path or a parent folder.
     """
 
     DEFAULT_FILENAME = "folder.txt"
@@ -514,14 +519,14 @@ class Folder(Outline):
     def structure_metadata(self) -> str:
         """
         The semantic position of this object in the novel (novel, chapter, scene)
-        
-        It is possible for subclasses to return None and use the default. 
+
+        It is possible for subclasses to return None and use the default.
 
         Although in many cases a folder should be considered a chapter, not all folders are chapters.
         The default will be to create the folder as chapter.
 
-        This should return 'chapter' if that turns out to be the wrong choice change this to None so the 
-        default of scene is used. 
+        This should return 'chapter' if that turns out to be the wrong choice change this to None so the
+        default of scene is used.
         """
         return mdata.CHAPTER
 
@@ -560,7 +565,7 @@ class Folder(Outline):
 
 class Scene(Folder):
     """
-    a scene .md file under a folder. It maintains the interface of Folder so the walking the hierarchy 
+    a scene .md file under a folder. It maintains the interface of Folder so the walking the hierarchy
     down to files doesn't cause any issues.
     """
 
@@ -602,7 +607,7 @@ class Scene(Folder):
     @classmethod
     def create_folders(cls, path, convert):
         """
-        Overrides parent's `create_folders` since self.path is a file and not a folder. 
+        Overrides parent's `create_folders` since self.path is a file and not a folder.
         """
         parent_dir = os.path.split(path)[0]
         if not os.path.exists(parent_dir):
@@ -618,7 +623,7 @@ class Scene(Folder):
     def structure_metadata(self) -> Optional[str]:
         """
         The semantic position of this object in the novel (novel, chapter, scene)
-        
-        Returning None will use the implied default of scene. 
+
+        Returning None will use the implied default of scene.
         """
         return None

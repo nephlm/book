@@ -13,7 +13,8 @@ import book.cli as cli
 import book.session as sess
 import book.structure as struct
 import book.fs_utils as fs_utils
-import book.compile as compile
+import book.compile
+import book.config as config
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -122,8 +123,9 @@ def show_session(args):
             end="\r",
         )
 
+    conf = config.get_config(args.path)
     novel = struct.Novel(args.path)
-    session = sess.Session(novel, args.goal, args.start)
+    session = sess.Session(novel, args.goal, args.start, tiddlywiki=conf.tiddlywiki)
     while True:
         run(session)
         session.commit()
@@ -156,7 +158,7 @@ def show_transform(args):
 
 def show_compile(args):
     if args.build_dir is None:
-        build_dir = os.path.join(args.path, 'build')
+        build_dir = os.path.join(args.path, "build")
     else:
         build_dir = args.build_dir
 
@@ -167,13 +169,13 @@ def show_compile(args):
     single_string = novel.compile()
 
     # write master md file
-    md_filename = os.path.join(build_dir, 'single_file.md')
-    with open(md_filename, 'w') as fp:
+    md_filename = os.path.join(build_dir, "single_file.md")
+    with open(md_filename, "w") as fp:
         fp.write(single_string)
 
     # convert md file to epub
-    epub_filename = os.path.join(build_dir, 'book.epub')
-    compile.compile_to_epub(md_filename, epub_filename)
+    epub_filename = os.path.join(build_dir, "book.epub")
+    book.compile.compile_to_epub(md_filename, epub_filename)
 
 
 if __name__ == "__main__":
