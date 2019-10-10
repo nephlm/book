@@ -15,7 +15,7 @@ import tiddlywiki_parser
 
 class Session(object):
 
-    COMMIT_THRESHOLD = 30  # 600
+    COMMIT_THRESHOLD = 600  # 600
     CHANGE_THRESHOLD = 5
 
     def __init__(self, novel, goal, start, tiddlywiki=None):

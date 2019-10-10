@@ -14,10 +14,13 @@ class Config(object):
         for key in self.DEFAULT_KEYS:
             setattr(self, key, None)
 
-        with open(path, "r") as fp:
-            self._conf = yaml.safe_load(fp.read())
-            for key in self._conf:
-                setattr(self, key, self._conf[key])
+        try:
+            with open(path, "r") as fp:
+                self._conf = yaml.safe_load(fp.read())
+                for key in self._conf:
+                    setattr(self, key, self._conf[key])
+        except IOError:
+            self._conf = {}
 
 
 def get_config(path):

@@ -54,7 +54,11 @@ def commit(path):
         for item in repo.untracked_files:
             repo.git.add(item)
         repo.git.commit("-a", "-m", f"{aware_datetime().isoformat()}")
-        repo.git.push()
+        try:
+            repo.git.push()
+        except git.exc.GitCommandError as exc:
+            print("ERROR: Could not commit")
+            print(exc)
 
 
 def aware_datetime():
