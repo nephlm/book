@@ -1,8 +1,6 @@
-# ms_session_wc
+# book
 
-TODO: change the project name given the change in scope.
-
-Maintain, monitor and modify a file structure and files based on the (manuskript)[https://github.com/olivierkes/manuskript] file structure.  This would be setting were set to not to save as a single .msk file or if that file were unzipped.
+Maintain, monitor and modify a file structure and files based on the (manuskript)[https://github.com/olivierkes/manuskript] file structure.  This would be if settings were set not to save as a single .msk file or if that file were unzipped.
 
 The resulting structure is only close to the manuscript format, no attempt will be made to keep them cross compatible.  It will work with a file structure created my manuskript, manuskript will probably not work with a file structure created by this script.
 
@@ -22,14 +20,19 @@ The resulting structure is only close to the manuscript format, no attempt will 
 
 I generally use (tiddlywiki)[https://tiddlywiki.com] for my world bible and the rest of these files are two structured for my needs. 
 
+## config.yaml
+
+The novel many have a `config.yaml` in the root of the novel.  Right now the only supported option in the file is:
+
+* `tiddlywiki`: If this is set to a tiddlyspot or similar url that will serve a tiddlywiki file, then when session is running it will download and extract the tiddlers every 10 minutes.  The tiddlers are stored under in `world/tiddlers.json`
+
 ## Subcommands 
 
-The main command is `book` and like with git there is a required subcommand.  Path is a required argument to all subcommands.  With the exception of some permutations of `new` this is alwasy the folder containing the `MANUSKRIPT` file.
+The main command is `book` and like with git there is a required subcommand.  Path is a required argument to all subcommands.  With the exception of some permutations of `new` this is always the folder containing the `MANUSKRIPT` file.
 
 ### New
 
 Create a new novel, folder or scene.
-
 
 A new novel is created if there is no parent directory containing `MANUSKRIPT`.
 ```
@@ -52,12 +55,12 @@ The preceding numbers for chapters and scenes are not optional, it is how orderi
 
 ### Rename
 
-Folders and scenes can be created with float order numbers.
+Folders and scenes must be created as file starting with a number.  This number may be an integer or decimal number.
 
 ```
-$ book new ~/Documetns/my_novel/outline/1-chapter/1.5-scene.md
+$ book new ~/Documents/my_novel/outline/1-chapter/1.5-scene.md
 ```
-Rename will rename all the folders and scenes to integer order numbers to keep everything orderly.
+Rename will rename all the folders and scenes with integer order numbers to keep everything orderly.  It will also use the title from the file metadata during the rename.  
 ```
 $ book rename ~/Documetns/my_novel/outline/1-chapter/1.5-scene.md
 ```
@@ -65,10 +68,9 @@ You'll need to confirm the renames.
 
 ### Session
 
-Keep track of the wordcount for the session while editing a manuskript document.
+Keep track of the wordcount for the session while editing a novel.
 
-
-Interrogates the Manuskript save file for the purpose of setting a wordcount goal and updating progress whenever the file changes. 
+Interrogates the novel files for the purpose of setting a wordcount goal and updating progress whenever the file changes. 
 
 This is a feature I found incredible useful from scrivener when it worked on my linux installation. 
 
@@ -88,7 +90,7 @@ $ book session --goal 750 ~/Documents/my_novel
 11/750 - Session; 182 start; 193 total 
 ```
 
-While session is running the novel will be committed and pushed to a git remote repo every 10 minutes.  It will likely throw errors if your novel is not backed by a git repo or git is not installed.  
+If you novel is in a git repo, then While session is running the novel will be committed and pushed to a git remote repo every 10 minutes. 
 
 Github now has private repos so there is no excuse. 
 
@@ -96,7 +98,7 @@ Github now has private repos so there is no excuse.
 
 Some basic stats about scenes.  Generally prints out the titles of the scenes in order.  Also includes word counts and the order number within the folder it is in.
 
-It also shows the total word count and max pk.  Now that the `new` command the max pk isn't that relevant anymore.  This whole command is nearly only useful as debugging.
+It also shows the total word count and max pk.  Now that the `new` command exists the max pk isn't that relevant anymore.  This whole command is nearly only useful as debugging.
 
 ```
 $ book stats ~/Documents/my_novel
@@ -119,7 +121,14 @@ Transforms are applied to all scenes.
 $ book transform --softcrlf
 ```
 
-Manuscript saves in `.mmd` format with hardcrlf, but that isn't as natural to edit as softcrlf with spaces between paragraphs.  These flags will flip between the two modes. 
+Manuscript and scrivener export saves in `.mmd` format with hardcrlf, but that isn't as natural to edit as softcrlf with spaces between paragraphs.  These flags will flip between the two modes. 
+
+### Compile
+
+There is basic support for compiling into an ebook.  
+```
+$ book compile ~/Documents/mynovel/
+```
 
 ## Outdated
 
@@ -128,11 +137,8 @@ The whole nature of this project has changes as I migrated off manuskipt to edit
 Todo: 
 
 * Method to reset the session and change goal without exiting the program.
-* Use Manuskripts libraries and methods, rather than recoding the parsing of the save file.  In my defense I'm not sure if the calls in loadSave.py are stable or not and I only really had to read a tiny bit of the save file.  
-* A curses (or something) progress bar like display
-* Add interval as an option
-* I believe this handles the compile option correctly, but I only saw compile values of 0 and 2, which suggests there is a 1 and I don't know how to make that happen or what the semantics of that are.  Find that out. 
-* There are some inefficiencies in walking up the tree to check the compile options.  They should probably be cleaned up.  
+* A curses (or something) progress bar like display for session.
+* Add interval as an option to session
 
 Caveats:
 
