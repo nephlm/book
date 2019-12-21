@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/tkuster/.pyenv/versions/manuskript/bin/python",
+    "python.pythonPath": "/home/tkuster/.pyenv/versions/book/bin/python",
     "python.testing.pytestArgs": [
         "tests"
     ],
