@@ -84,8 +84,15 @@ class Novel(object):
         return single_string
 
     def compile_frontmatter(self) -> str:
-        # return f"# {self.outline.title}\n\n"
-        return ""
+        print(f'title: {self.outline.title}')
+        yaml = '---\n'
+        yaml += f'title: {self.outline.title}\n'
+        yaml += f'author: Todd Kaye\n'
+        yaml += '...\n\n'
+        print(yaml)
+        return yaml
+        # return f"{self.outline.title}\n\n"
+        # return ""
 
     def compile_backmatter(self) -> str:
         return ""
