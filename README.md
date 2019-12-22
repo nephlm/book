@@ -125,10 +125,20 @@ Manuscript and scrivener export saves in `.mmd` format with hardcrlf, but that i
 
 ### Compile
 
-There is basic support for compiling into an ebook.  
+There is basic support for compiling into an ebook.  Right now this is a pretty basic feature.  
+
+This requires pandoc and will export to an epub format 
 ```
 $ book compile ~/Documents/mynovel/
 ```
+
+Compile will write to `build/single_file.md` and `build/book.epub`.  `single_file.md` is a cleaned and concatanated version of the whole novel, while `book.epub` is the compiled epub.
+
+Todo 
+* Fill in frontmatter from config.yaml
+* Custom css
+* backmatter?
+* Customize chapter headings.
 
 ## Outdated
 
